@@ -14,6 +14,7 @@ export interface Inquiry {
   notes: string | null
   created_at: string
   updated_at: string
+  viewed_at: string | null
 }
 
 export const STATUS_LABELS: Record<InquiryStatus, string> = {
@@ -34,4 +35,13 @@ export const STATUS_STYLES: Record<InquiryStatus, string> = {
 
 export function isPortfolioViewer(inquiry: Inquiry) {
   return inquiry.project_type === 'Portfolio viewer'
+}
+
+export interface InquiryStatusHistoryEntry {
+  id: string
+  inquiry_id: string
+  old_status: InquiryStatus | null
+  new_status: InquiryStatus
+  changed_by: string | null
+  changed_at: string
 }

@@ -4,6 +4,10 @@ import { useMemo, type ReactNode } from 'react'
 import Link from 'next/link'
 import { isPortfolioViewer, STATUS_LABELS, STATUS_STYLES } from '@/lib/types'
 import { useInquiries } from './inquiries-context'
+import { useNavigationProgress } from './navigation-progress'
+import { TrendChart, type TrendPoint } from './trend-chart'
+
+const TREND_DAYS = 14
 
 const ACCENTS = {
   sky: 'bg-sky-50 text-sky-600',
@@ -63,7 +67,44 @@ export default function DashboardPage() {
     }
   }, [inquiries])
 
+  const unread = useMemo(() => {
+    let enquiries = 0
+    let portfolio = 0
+    for (const inquiry of inquiries) {
+      if (inquiry.viewed_at) continue
+      if (isPortfolioViewer(inquiry)) portfolio += 1
+      else enquiries += 1
+    }
+    return { enquiries, portfolio }
+  }, [inquiries])
+
   const recent = inquiries.slice(0, 8)
+
+  const trend = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const days: TrendPoint[] = []
+
+    for (let i = TREND_DAYS - 1; i >= 0; i--) {
+      const dayStart = new Date(todayStart)
+      dayStart.setDate(dayStart.getDate() - i)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
+
+      const count = inquiries.filter((inquiry) => {
+        const created = new Date(inquiry.created_at)
+        return created >= dayStart && created < dayEnd
+      }).length
+
+      days.push({
+        date: dayStart.toISOString().slice(0, 10),
+        label: dayStart.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+        count,
+      })
+    }
+
+    return days
+  }, [inquiries])
 
   return (
     <div>
@@ -87,7 +128,14 @@ export default function DashboardPage() {
         <StatCard label="Portfolio views" value={stats.portfolio} accent="indigo" icon={<EyeIcon />} />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">Leads over the last {TREND_DAYS} days</h2>
+        <div className="mt-4">
+          <TrendChart data={trend} />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
           <h2 className="text-sm font-semibold text-slate-900">Recent activity</h2>
 
@@ -96,12 +144,12 @@ export default function DashboardPage() {
           ) : (
             <ul className="mt-4 divide-y divide-slate-100">
               {recent.map((inquiry) => (
-                <li key={inquiry.id} className="flex items-center justify-between gap-3 py-3">
+                <li key={inquiry.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-900">{inquiry.name}</p>
                     <p className="truncate text-xs text-slate-500">{inquiry.email}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                       {isPortfolioViewer(inquiry) ? 'Portfolio' : 'Enquiry'}
                     </span>
@@ -110,7 +158,7 @@ export default function DashboardPage() {
                     >
                       {STATUS_LABELS[inquiry.status]}
                     </span>
-                    <span className="w-14 shrink-0 text-right text-xs text-slate-400">
+                    <span className="shrink-0 text-xs text-slate-400 sm:w-14 sm:text-right">
                       {relativeTime(inquiry.created_at)}
                     </span>
                   </div>
@@ -126,12 +174,14 @@ export default function DashboardPage() {
             label="Enquiries"
             description="Contact & callback requests"
             count={stats.enquiries}
+            unread={unread.enquiries}
           />
           <QuickLink
             href="/portfolio"
             label="Portfolio Viewer"
             description="Property portfolio access"
             count={stats.portfolio}
+            unread={unread.portfolio}
           />
         </div>
       </div>
@@ -154,20 +204,31 @@ function QuickLink({
   label,
   description,
   count,
+  unread,
 }: {
   href: string
   label: string
   description: string
   count: number
+  unread: number
 }) {
+  const { start } = useNavigationProgress()
   return (
     <Link
       href={href}
+      onNavigate={() => start()}
       className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-sky-300 hover:shadow-md"
     >
       <div className="flex items-center justify-between">
         <p className="font-semibold text-slate-900">{label}</p>
-        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">{count}</span>
+        <div className="flex items-center gap-1.5">
+          {unread > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">{count}</span>
+        </div>
       </div>
       <p className="mt-1 text-xs text-slate-500">{description}</p>
       <p className="mt-3 text-sm font-semibold text-sky-600">Go to {label.toLowerCase()} →</p>

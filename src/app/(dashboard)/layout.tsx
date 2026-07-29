@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { isAllowedAdminEmail } from '@/lib/admin'
 import type { Inquiry } from '@/lib/types'
 import { InquiriesProvider } from './inquiries-context'
+import { NavigationProgressProvider } from './navigation-progress'
 import { SidebarNav } from './sidebar-nav'
 
 export const dynamic = 'force-dynamic'
@@ -34,10 +35,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <InquiriesProvider initial={(data ?? []) as Inquiry[]}>
-      <div className="flex min-h-screen bg-slate-50">
-        <SidebarNav email={user.email} />
-        <main className="min-w-0 flex-1 overflow-x-hidden px-6 py-8 sm:px-10">{children}</main>
-      </div>
+      <NavigationProgressProvider>
+        <div className="min-h-screen bg-slate-50">
+          <SidebarNav email={user.email} />
+          <main className="min-w-0 overflow-x-hidden px-4 pt-20 pb-8 sm:px-6 lg:ml-64 lg:px-10 lg:pt-8">
+            {children}
+          </main>
+        </div>
+      </NavigationProgressProvider>
     </InquiriesProvider>
   )
 }
