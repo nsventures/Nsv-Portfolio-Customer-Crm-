@@ -9,7 +9,7 @@ import { InquiryModal } from './inquiry-modal'
 import { bulkDeleteInquiries, bulkUpdateInquiryStatus } from './actions'
 
 type TabKey = 'all' | InquiryStatus
-type SortKey = 'name' | 'project_type' | 'city' | 'status' | 'created_at'
+type SortKey = 'name' | 'project_type' | 'status' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
 const CSV_COLUMNS = [
@@ -18,7 +18,6 @@ const CSV_COLUMNS = [
   { key: 'phone', label: 'Phone' },
   { key: 'company', label: 'Company' },
   { key: 'project_type', label: 'Type' },
-  { key: 'city', label: 'City' },
   { key: 'status_label', label: 'Status' },
   { key: 'created_at_formatted', label: 'Received' },
   { key: 'notes', label: 'Notes' },
@@ -84,7 +83,7 @@ export function InquiriesTable({ inquiries, emptyLabel }: { inquiries: Inquiry[]
       if (to !== null && created >= to) return false
 
       if (!q) return true
-      return [inquiry.name, inquiry.email, inquiry.phone, inquiry.company, inquiry.project_type, inquiry.city]
+      return [inquiry.name, inquiry.email, inquiry.phone, inquiry.company, inquiry.project_type]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q))
     })
@@ -310,7 +309,6 @@ export function InquiriesTable({ inquiries, emptyLabel }: { inquiries: Inquiry[]
               </th>
               <SortableHeader label="Contact" sortKey="name" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <SortableHeader label="Type" sortKey="project_type" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
-              <SortableHeader label="City" sortKey="city" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <SortableHeader label="Status" sortKey="status" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <SortableHeader label="Received" sortKey="created_at" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <th className="px-5 py-3" />
@@ -319,7 +317,7 @@ export function InquiriesTable({ inquiries, emptyLabel }: { inquiries: Inquiry[]
           <tbody>
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-500">
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">
                   {emptyLabel}
                 </td>
               </tr>
@@ -438,7 +436,6 @@ function InquiryRow({
         {inquiry.phone && <p className="text-xs text-slate-400">{inquiry.phone}</p>}
       </td>
       <td className="px-5 py-4 text-slate-700">{property ?? inquiry.project_type ?? '—'}</td>
-      <td className="px-5 py-4 text-slate-700">{inquiry.city ?? '—'}</td>
       <td className="px-5 py-4">
         <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inquiry.status]}`}>
           {STATUS_LABELS[inquiry.status]}
@@ -504,7 +501,6 @@ function InquiryCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
         <span>{property ?? inquiry.project_type ?? '—'}</span>
-        <span>{inquiry.city ?? '—'}</span>
         <span className="ml-auto text-slate-400">{formatDate(inquiry.created_at)}</span>
       </div>
     </div>

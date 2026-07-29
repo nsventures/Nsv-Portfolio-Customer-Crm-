@@ -158,7 +158,10 @@ export default function DashboardPage() {
                     >
                       {STATUS_LABELS[inquiry.status]}
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400 sm:w-14 sm:text-right">
+                    <span
+                      className="shrink-0 text-xs text-slate-400 sm:w-14 sm:text-right"
+                      suppressHydrationWarning
+                    >
                       {relativeTime(inquiry.created_at)}
                     </span>
                   </div>

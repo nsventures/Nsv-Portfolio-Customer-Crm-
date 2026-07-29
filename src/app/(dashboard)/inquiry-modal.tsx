@@ -101,7 +101,6 @@ export function InquiryModal({ inquiry, onClose }: { inquiry: Inquiry; onClose: 
             <Field label="Phone" value={inquiry.phone} />
             <Field label="Company" value={inquiry.company} />
             <Field label="Type" value={property ?? inquiry.project_type} />
-            <Field label="City" value={inquiry.city} />
             <Field label="Timeline" value={inquiry.timeline} />
             <Field label="Received" value={formatDate(inquiry.created_at)} />
           </div>

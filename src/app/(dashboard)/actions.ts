@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { isAllowedAdminEmail } from '@/lib/admin'
 import type { InquiryStatus } from '@/lib/types'
@@ -16,12 +15,19 @@ async function requireAdmin() {
   return supabase
 }
 
+// None of these actions call revalidatePath: the client already applies each
+// mutation optimistically (see useInquiryActions in inquiries-context.tsx)
+// and reconciles via the realtime subscription, so the SSR `initial` prop
+// these would refresh is never even read again after mount. Calling it here
+// used to force a full auth check + table re-fetch as part of every single
+// action's response (Next.js returns the re-rendered RSC payload in the same
+// round trip), which made every click noticeably slower for zero UI benefit.
+
 export async function updateInquiryStatus(id: string, status: InquiryStatus) {
   const supabase = await requireAdmin()
   const { error } = await supabase.from('inquiries').update({ status }).eq('id', id)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
 }
 
 export async function updateInquiryNotes(id: string, notes: string) {
@@ -32,7 +38,6 @@ export async function updateInquiryNotes(id: string, notes: string) {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
 }
 
 export async function deleteInquiry(id: string) {
@@ -40,14 +45,12 @@ export async function deleteInquiry(id: string) {
   const { error } = await supabase.from('inquiries').delete().eq('id', id)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
 }
 
 export async function markInquiryViewed(id: string) {
   const supabase = await requireAdmin()
-  // .is('viewed_at', null) guards against re-writing/re-triggering on every
-  // expand of an already-viewed row — this fires far more often than the
-  // other actions, so we skip revalidatePath here (realtime already syncs it).
+  // .is('viewed_at', null) guards against re-writing on every expand of an
+  // already-viewed row.
   const { error } = await supabase
     .from('inquiries')
     .update({ viewed_at: new Date().toISOString() })
@@ -63,7 +66,6 @@ export async function bulkUpdateInquiryStatus(ids: string[], status: InquiryStat
   const { error } = await supabase.from('inquiries').update({ status }).in('id', ids)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
 }
 
 export async function bulkDeleteInquiries(ids: string[]) {
@@ -72,5 +74,4 @@ export async function bulkDeleteInquiries(ids: string[]) {
   const { error } = await supabase.from('inquiries').delete().in('id', ids)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/', 'layout')
 }
